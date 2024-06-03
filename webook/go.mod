@@ -3,6 +3,7 @@ module github.com/lcsin/goprojets/webook
 go 1.21.3
 
 require (
+	github.com/dlclark/regexp2 v1.11.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/lcsin/gopocket v0.0.0-20240603103612-ccd5c3e5b8fb
 )

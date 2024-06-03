@@ -14,7 +14,7 @@ func RegisterRoutes() *gin.Engine {
 	})
 
 	// user routes
-	new(UserHandler).RegisterRoutes(v1)
+	NewUserHandler().RegisterRoutes(v1)
 
 	return r
 }
