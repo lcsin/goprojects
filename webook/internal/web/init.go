@@ -4,10 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lcsin/goprojets/webook/internal/service"
 	"github.com/lcsin/goprojets/webook/internal/web/middleware"
 )
 
-func RegisterRoutes() *gin.Engine {
+func RegisterRoutes(us *service.UserService) *gin.Engine {
 	r := gin.Default()
 	r.Use(middleware.CORS())
 
@@ -17,7 +18,7 @@ func RegisterRoutes() *gin.Engine {
 	})
 
 	// user routes
-	NewUserHandler().RegisterRoutes(v1)
+	NewUserHandler(us).RegisterRoutes(v1)
 
 	return r
 }
