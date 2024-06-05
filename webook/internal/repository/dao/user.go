@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
+	"github.com/lcsin/goprojets/webook/internal/biz"
 	"gorm.io/gorm"
 )
 
@@ -16,9 +18,12 @@ func NewUserDAO(db *gorm.DB) *UserDAO {
 }
 
 type User struct {
-	Id     int64  `gorm:"primaryKey,autoIncrement"`
-	Email  string `gorm:"unique"`
-	Passwd string
+	ID       int64  `gorm:"primaryKey,autoIncrement"`
+	Email    string `gorm:"unique"`
+	Passwd   string
+	Nickname string
+	Profile  string
+	Birthday int64
 
 	// 毫秒数
 	CreateTime int64
@@ -29,5 +34,39 @@ func (dao *UserDAO) Insert(ctx context.Context, u User) error {
 	now := time.Now().UnixMilli()
 	u.CreateTime = now
 	u.UpdateTime = now
-	return dao.db.WithContext(ctx).Create(&u).Error
+	err := dao.db.WithContext(ctx).Create(&u).Error
+	if me, ok := err.(*mysql.MySQLError); ok {
+		const duplicateErr uint16 = 1062
+		if me.Number == duplicateErr {
+			// 邮箱已被注册
+			return biz.ErrDuplicateEmail
+		}
+	}
+
+	return err
+}
+
+func (dao *UserDAO) SelectByEmail(ctx context.Context, email string) (*User, error) {
+	var user User
+	if err := dao.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (dao *UserDAO) SelectByID(ctx context.Context, ID int64) (*User, error) {
+	var user User
+	if err := dao.db.WithContext(ctx).Where("id = ?", ID).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (dao *UserDAO) UpdateByID(ctx context.Context, u User) error {
+	if _, err := dao.SelectByID(ctx, u.ID); err != nil {
+		return err
+	}
+
+	u.UpdateTime = time.Now().UnixMilli()
+	return dao.db.WithContext(ctx).Where("id = ?", u.ID).Updates(&u).Error
 }

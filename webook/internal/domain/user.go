@@ -1,6 +1,14 @@
 package domain
 
+import "time"
+
 type User struct {
-	Email  string
-	Passwd string
+	UID      int64  `json:"uid"`
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+	Passwd   string `json:"passwd"`
+	Profile  string `json:"profile"`
+
+	Birthday   time.Time `json:"birthday"`
+	CreateTime time.Time `json:"createTime"`
 }
