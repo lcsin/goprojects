@@ -5,9 +5,9 @@ import (
 	"time"
 
 	regexp "github.com/dlclark/regexp2"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/lcsin/gopocket/util/ginx"
+	"github.com/lcsin/gopocket/util/jwt"
 	"github.com/lcsin/goprojets/webook/internal/biz"
 	"github.com/lcsin/goprojets/webook/internal/domain"
 	"github.com/lcsin/goprojets/webook/internal/service"
@@ -111,14 +111,22 @@ func (u *UserHandler) Login(c *gin.Context) {
 	}
 
 	// 登录成功
-	sess := sessions.Default(c)
-	sess.Set("uid", user.UID)
-	sess.Options(sessions.Options{MaxAge: 900})
-	if err = sess.Save(); err != nil {
+	//sess := sessions.Default(c)
+	//sess.Set("uid", user.UID)
+	//sess.Options(sessions.Options{MaxAge: 900})
+	//if err = sess.Save(); err != nil {
+	//	ginx.Error(c, -500, "系统错误")
+	//	return
+	//}
+
+	// 生成jwt
+	token, err := jwt.New([]byte("hello,world!"))
+	if err != nil {
 		ginx.Error(c, -500, "系统错误")
 		return
 	}
-
+	// 设置jwt token
+	c.Header("x-jwt-token", token)
 	ginx.OK(c, user)
 }
 
