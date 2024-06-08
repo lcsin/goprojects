@@ -1,19 +1,22 @@
 package main
 
 import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 	"github.com/lcsin/gopocket/util/httpx"
-	"github.com/lcsin/goprojets/webook/internal/repository"
-	"github.com/lcsin/goprojets/webook/internal/repository/dao"
-	"github.com/lcsin/goprojets/webook/internal/service"
-	"github.com/lcsin/goprojets/webook/internal/web"
 )
 
 func main() {
-	db := repository.InitDB()
-	ud := dao.NewUserDAO(db)
-	ur := repository.NewUserRepository(ud)
-	us := service.NewUserService(ur)
-	r := web.RegisterRoutes(us)
+	//db := repository.InitDB()
+	//ud := dao.NewUserDAO(db)
+	//ur := repository.NewUserRepository(ud)
+	//us := service.NewUserService(ur)
+	//r := web.RegisterRoutes(us)
 
+	r := gin.Default()
+	r.GET("/ping", func(c *gin.Context) {
+		c.String(http.StatusOK, "pong")
+	})
 	httpx.Graceful(r, ":8080")
 }

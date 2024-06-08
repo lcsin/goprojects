@@ -8,7 +8,7 @@ import (
 
 // InitDB 初始化数据库
 func InitDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open("root:root@tcp(112.124.62.35:3306)/webook"))
+	db, err := gorm.Open(mysql.Open("root:root@tcp(localhost:13306)/webook"))
 	if err != nil {
 		panic(err)
 	}

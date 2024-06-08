@@ -2,13 +2,16 @@ package web
 
 import (
 	"errors"
+	"fmt"
+	"log"
 	"time"
 
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/lcsin/gopocket/util/ginx"
-	"github.com/lcsin/gopocket/util/jwt"
 	"github.com/lcsin/goprojets/webook/internal/biz"
+	"github.com/lcsin/goprojets/webook/internal/config"
 	"github.com/lcsin/goprojets/webook/internal/domain"
 	"github.com/lcsin/goprojets/webook/internal/service"
 )
@@ -51,22 +54,22 @@ func (u *UserHandler) Signup(c *gin.Context) {
 	}
 	var req signupReq
 	if err := c.ShouldBind(&req); err != nil {
-		ginx.Error(c, -400, "参数无效")
+		ginx.ResponseError(c, ginx.ErrBadRequest)
 		return
 	}
 	// 参数校验
 	isEmail, _ := u.emailRexExp.MatchString(req.Email)
 	if !isEmail {
-		ginx.Error(c, -400, "邮箱格式错误")
+		ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, "邮箱格式错误")
 		return
 	}
 	isPasswd, _ := u.passwordRexExp.MatchString(req.Passwd)
 	if !isPasswd {
-		ginx.Error(c, -400, "密码必须包含数字、特殊字符，并且长度不能小于8位")
+		ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, "密码必须包含数字、特殊字符，并且长度不能小于8位")
 		return
 	}
 	if req.Passwd != req.ConfirmPasswd {
-		ginx.Error(c, -400, "两次输入的密码不一致")
+		ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, "两次输入的密码不一致")
 		return
 	}
 	// 用户注册
@@ -77,11 +80,11 @@ func (u *UserHandler) Signup(c *gin.Context) {
 
 	switch err {
 	case nil:
-		ginx.OK(c, nil)
+		ginx.ResponseOK(c, nil)
 	case biz.ErrDuplicateEmail:
-		ginx.Error(c, -400, err.Error())
+		ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, err.Error())
 	default:
-		ginx.Error(c, -500, "系统错误")
+		ginx.ResponseError(c, ginx.ErrInternalServer)
 	}
 }
 
@@ -93,7 +96,7 @@ func (u *UserHandler) Login(c *gin.Context) {
 	}
 	var req loginReq
 	if err := c.ShouldBind(&req); err != nil {
-		ginx.Error(c, -400, "参数错误")
+		ginx.ResponseError(c, ginx.ErrBadRequest)
 		return
 	}
 	// 用户登录
@@ -103,31 +106,24 @@ func (u *UserHandler) Login(c *gin.Context) {
 	})
 	if err != nil {
 		if errors.Is(err, biz.ErrInvalidUserOrPasswd) {
-			ginx.Error(c, -404, err.Error())
+			ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, err.Error())
 			return
 		}
-		ginx.Error(c, -500, "系统错误")
+		ginx.ResponseError(c, ginx.ErrInternalServer)
 		return
 	}
 
-	// 登录成功
-	//sess := sessions.Default(c)
-	//sess.Set("uid", user.UID)
-	//sess.Options(sessions.Options{MaxAge: 900})
-	//if err = sess.Save(); err != nil {
-	//	ginx.Error(c, -500, "系统错误")
-	//	return
-	//}
-
 	// 生成jwt
-	token, err := jwt.New([]byte("hello,world!"))
+	claims := config.UserClaims{UID: user.UID}
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).
+		SignedString([]byte(config.JwtKey))
 	if err != nil {
-		ginx.Error(c, -500, "系统错误")
+		ginx.ResponseError(c, ginx.ErrInternalServer)
 		return
 	}
 	// 设置jwt token
-	c.Header("x-jwt-token", token)
-	ginx.OK(c, user)
+	c.Header("x-jwt-token", fmt.Sprintf("Bear %v", token))
+	ginx.ResponseOK(c, user)
 }
 
 func (u *UserHandler) Edit(c *gin.Context) {
@@ -141,13 +137,13 @@ func (u *UserHandler) Edit(c *gin.Context) {
 	}
 	var req editReq
 	if err := c.ShouldBind(&req); err != nil {
-		ginx.Error(c, -400, "参数错误")
+		ginx.ResponseError(c, ginx.ErrBadRequest)
 		return
 	}
 
 	birthday, err := time.Parse(time.DateOnly, req.Birthday)
 	if err != nil {
-		ginx.Error(c, -400, "参数错误")
+		ginx.ResponseError(c, ginx.ErrBadRequest)
 		return
 	}
 
@@ -161,14 +157,14 @@ func (u *UserHandler) Edit(c *gin.Context) {
 	})
 	if err != nil {
 		if errors.Is(err, biz.ErrUserNotFound) {
-			ginx.Error(c, -400, err.Error())
+			ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, err.Error())
 			return
 		}
-		ginx.Error(c, -500, "系统错误")
+		ginx.ResponseError(c, ginx.ErrInternalServer)
 		return
 	}
 
-	ginx.OK(c, nil)
+	ginx.ResponseOK(c, nil)
 }
 
 func (u *UserHandler) Profile(c *gin.Context) {
@@ -177,19 +173,22 @@ func (u *UserHandler) Profile(c *gin.Context) {
 	}
 	var req profileReq
 	if err := c.ShouldBind(&req); err != nil {
-		ginx.Error(c, -400, "参数错误")
+		ginx.ResponseError(c, ginx.ErrBadRequest)
 		return
 	}
+
+	uid, _ := c.Get("uid")
+	log.Println("uid==>", uid)
 
 	user, err := u.srv.Profile(c, req.UID)
 	if err != nil {
 		if errors.Is(err, biz.ErrUserNotFound) {
-			ginx.Error(c, -404, err.Error())
+			ginx.ResponseErrorMessage(c, ginx.ErrNotFound, err.Error())
 			return
 		}
-		ginx.Error(c, -500, "系统错误")
+		ginx.ResponseError(c, ginx.ErrInternalServer)
 		return
 	}
 
-	ginx.OK(c, user)
+	ginx.ResponseOK(c, user)
 }

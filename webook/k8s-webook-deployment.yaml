@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+# 配置的类型
+kind: Deployment
+metadata:
+  name: webook
+spec:
+  replicas: 3 # 副本数量
+  selector:
+    matchLabels:
+      app: webook
+  template:
+    metadata:
+      # 对应selector.matchLabels
+      labels:
+        app: webook
+    # pod具体的规格说明
+    spec:
+      # pod里面运行的container
+      containers:
+        - name: webook
+          image: lcsin/webook:v0.0.1
+          ports:
+            - containerPort: 8080 # 端口号
