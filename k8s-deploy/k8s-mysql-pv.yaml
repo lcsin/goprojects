@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: webook-mysql-pv
+  name: k8s-mysql-pv
 spec:
-  storageClassName: webook-mysql-class
+  storageClassName: k8s-mysql-class
   capacity:
     storage: 1Gi
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: "/mnt/webook/mysql"
+    path: "/mnt/k8s/mysql"

@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: webook-mysql
+  name: k8s-mysql
 spec:
   selector:
-    app: webook-mysql
+    app: k8s-mysql
   ports:
     - protocol: TCP
-      port: 13309
+      port: 13306
       targetPort: 3306
-      nodePort: 31006
+      nodePort: 31306
   type: NodePort
 

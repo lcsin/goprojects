@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: webook-redis
+  name: k8s-redis
 spec:
   selector:
-    app: webook-redis
+    app: k8s-redis
   ports:
     - protocol: TCP
       port: 16379

@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: webook-mysql
+  name: k8s-mysql
   labels:
-    app: webook-mysql
+    app: k8s-mysql
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: webook-mysql
+      app: k8s-mysql
   template:
     metadata:
-      name: webook-mysql
+      name: k8s-mysql
       labels:
-        app: webook-mysql
+        app: k8s-mysql
     spec:
       containers:
-        - name: webook-mysql
+        - name: k8s-mysql
           image: mysql:latest
           imagePullPolicy: IfNotPresent
           ports:
@@ -32,5 +32,5 @@ spec:
       volumes:
         - name: mysql-storage
           persistentVolumeClaim:
-            claimName: webook-mysql-claim
+            claimName: k8s-mysql-claim
       
