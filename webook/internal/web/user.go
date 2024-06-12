@@ -11,7 +11,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lcsin/gopocket/util/ginx"
 	"github.com/lcsin/goprojets/webook/internal/biz"
-	"github.com/lcsin/goprojets/webook/internal/config"
 	"github.com/lcsin/goprojets/webook/internal/domain"
 	"github.com/lcsin/goprojets/webook/internal/service"
 )
@@ -114,9 +113,9 @@ func (u *UserHandler) Login(c *gin.Context) {
 	}
 
 	// 生成jwt
-	claims := config.UserClaims{UID: user.UID}
+	claims := biz.UserClaims{UID: user.UID}
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).
-		SignedString([]byte(config.JwtKey))
+		SignedString([]byte(biz.JwtKey))
 	if err != nil {
 		ginx.ResponseError(c, ginx.ErrInternalServer)
 		return

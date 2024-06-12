@@ -1,4 +1,4 @@
-package config
+package biz
 
 import "github.com/golang-jwt/jwt/v5"
 

@@ -1,44 +1,48 @@
 package middleware
 
 import (
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/lcsin/goprojets/webook/internal/config"
+	"github.com/lcsin/gopocket/util/ginx"
+	"github.com/lcsin/goprojets/webook/internal/biz"
 )
 
 func Jwt() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
 		// 不需要登录校验
-		if path == "/api/v1/users/signup" || path == "/api/v1/users/login" {
+		if path == "/api/v1/users/signup" || path == "/api/v1/users/login" || path == "/api/v1/ping" {
 			return
 		}
 
 		header := c.GetHeader("Authorization")
 		if header == "" {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			ginx.ResponseError(c, ginx.ErrUnauthorized)
+			c.Abort()
 			return
 		}
 
 		segment := strings.Split(header, " ")
 		if len(segment) != 2 {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			ginx.ResponseError(c, ginx.ErrUnauthorized)
+			c.Abort()
 			return
 		}
 		tokenStr := segment[1]
-		var claims config.UserClaims
+		var claims biz.UserClaims
 		token, err := jwt.ParseWithClaims(tokenStr, &claims, func(token *jwt.Token) (interface{}, error) {
-			return []byte(config.JwtKey), nil
+			return []byte(biz.JwtKey), nil
 		})
 		if err != nil {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			ginx.ResponseError(c, ginx.ErrUnauthorized)
+			c.Abort()
 			return
 		}
 		if !token.Valid {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			ginx.ResponseError(c, ginx.ErrUnauthorized)
+			c.Abort()
 			return
 		}
 
