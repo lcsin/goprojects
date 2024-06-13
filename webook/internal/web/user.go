@@ -3,7 +3,6 @@ package web
 import (
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	regexp "github.com/dlclark/regexp2"
@@ -167,19 +166,13 @@ func (u *UserHandler) Edit(c *gin.Context) {
 }
 
 func (u *UserHandler) Profile(c *gin.Context) {
-	type profileReq struct {
-		UID int64 `json:"uid"`
-	}
-	var req profileReq
-	if err := c.ShouldBind(&req); err != nil {
-		ginx.ResponseError(c, ginx.ErrBadRequest)
+	uid, ok := c.Get("uid")
+	if !ok {
+		ginx.ResponseError(c, ginx.ErrNotFound)
 		return
 	}
 
-	uid, _ := c.Get("uid")
-	log.Println("uid==>", uid)
-
-	user, err := u.srv.Profile(c, req.UID)
+	user, err := u.srv.Profile(c, uid.(int64))
 	if err != nil {
 		if errors.Is(err, biz.ErrUserNotFound) {
 			ginx.ResponseErrorMessage(c, ginx.ErrNotFound, err.Error())

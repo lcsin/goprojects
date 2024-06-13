@@ -56,8 +56,8 @@ func (us *UserService) Edit(ctx context.Context, u domain.User) error {
 	return err
 }
 
-func (us *UserService) Profile(ctx context.Context, ID int64) (domain.User, error) {
-	user, err := us.repo.FindByID(ctx, ID)
+func (us *UserService) Profile(ctx context.Context, uid int64) (domain.User, error) {
+	user, err := us.repo.FindByID(ctx, uid)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return domain.User{}, biz.ErrUserNotFound
