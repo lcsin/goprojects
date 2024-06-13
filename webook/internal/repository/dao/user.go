@@ -46,20 +46,20 @@ func (dao *UserDAO) Insert(ctx context.Context, u User) error {
 	return err
 }
 
-func (dao *UserDAO) SelectByEmail(ctx context.Context, email string) (*User, error) {
+func (dao *UserDAO) SelectByEmail(ctx context.Context, email string) (User, error) {
 	var user User
 	if err := dao.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
-		return nil, err
+		return User{}, err
 	}
-	return &user, nil
+	return user, nil
 }
 
-func (dao *UserDAO) SelectByID(ctx context.Context, ID int64) (*User, error) {
+func (dao *UserDAO) SelectByID(ctx context.Context, ID int64) (User, error) {
 	var user User
 	if err := dao.db.WithContext(ctx).Where("id = ?", ID).First(&user).Error; err != nil {
-		return nil, err
+		return User{}, err
 	}
-	return &user, nil
+	return user, nil
 }
 
 func (dao *UserDAO) UpdateByID(ctx context.Context, u User) error {

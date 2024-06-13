@@ -29,17 +29,17 @@ func (us *UserService) Signup(ctx context.Context, u domain.User) error {
 	return us.repo.Create(ctx, u)
 }
 
-func (us *UserService) Login(ctx context.Context, u domain.User) (*domain.User, error) {
+func (us *UserService) Login(ctx context.Context, u domain.User) (domain.User, error) {
 	user, err := us.repo.FindByEmail(ctx, u.Email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, biz.ErrInvalidUserOrPasswd
+			return domain.User{}, biz.ErrInvalidUserOrPasswd
 		}
-		return nil, err
+		return domain.User{}, err
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Passwd), []byte(u.Passwd)); err != nil {
-		return nil, biz.ErrInvalidUserOrPasswd
+		return domain.User{}, biz.ErrInvalidUserOrPasswd
 	}
 
 	user.Passwd = ""
@@ -56,13 +56,13 @@ func (us *UserService) Edit(ctx context.Context, u domain.User) error {
 	return err
 }
 
-func (us *UserService) Profile(ctx context.Context, ID int64) (*domain.User, error) {
+func (us *UserService) Profile(ctx context.Context, ID int64) (domain.User, error) {
 	user, err := us.repo.FindByID(ctx, ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, biz.ErrUserNotFound
+			return domain.User{}, biz.ErrUserNotFound
 		}
-		return nil, err
+		return domain.User{}, err
 	}
 	user.Passwd = ""
 	return user, nil

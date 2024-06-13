@@ -114,14 +114,14 @@ func (u *UserHandler) Login(c *gin.Context) {
 
 	// 生成jwt
 	claims := biz.UserClaims{UID: user.UID}
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).
-		SignedString([]byte(biz.JwtKey))
+	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7))
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(biz.JwtKey))
 	if err != nil {
 		ginx.ResponseError(c, ginx.ErrInternalServer)
 		return
 	}
 	// 设置jwt token
-	c.Header("x-jwt-token", fmt.Sprintf("Bear %v", token))
+	c.Header("x-jwt-token", fmt.Sprintf("Bearer %v", token))
 	ginx.ResponseOK(c, user)
 }
 
