@@ -11,8 +11,8 @@ import (
 )
 
 type UserRepository struct {
-	dao   *dao.UserDAO
-	cache *cache.UserCache
+	dao   *dao.UserDAO     // 持久层
+	cache *cache.UserCache // 缓存层
 }
 
 func NewUserRepository(dao *dao.UserDAO, cache *cache.UserCache) *UserRepository {

@@ -40,7 +40,7 @@ func Jwt() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if !token.Valid {
+		if !token.Valid || claims.UserAgent != c.GetHeader("User-Agent") {
 			ginx.ResponseError(c, ginx.ErrUnauthorized)
 			c.Abort()
 			return

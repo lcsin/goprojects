@@ -112,8 +112,14 @@ func (u *UserHandler) Login(c *gin.Context) {
 	}
 
 	// 生成jwt
-	claims := biz.UserClaims{UID: user.UID}
-	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7))
+	claims := biz.UserClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
+		},
+		UID:       user.UID,
+		UserAgent: c.GetHeader("User-Agent"),
+	}
+
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(biz.JwtKey))
 	if err != nil {
 		ginx.ResponseError(c, ginx.ErrInternalServer)

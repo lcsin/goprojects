@@ -8,5 +8,6 @@ const (
 
 type UserClaims struct {
 	jwt.RegisteredClaims
-	UID int64 `json:"uid"`
+	UID       int64  `json:"uid"`
+	UserAgent string `json:"userAgent"`
 }
