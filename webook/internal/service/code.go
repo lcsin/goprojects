@@ -14,6 +14,13 @@ type CodeService struct {
 	sms  sms.Service
 }
 
+func NewCodeService(repo *repository.CodeRepository, sms sms.Service) *CodeService {
+	return &CodeService{
+		repo: repo,
+		sms:  sms,
+	}
+}
+
 func (cs *CodeService) Send(ctx context.Context, biz string, phone string) error {
 	// 生成验证码和保存验证码
 	code := cs.GenerateCode()
