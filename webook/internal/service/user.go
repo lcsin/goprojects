@@ -67,3 +67,21 @@ func (us *UserService) Profile(ctx context.Context, uid int64) (domain.User, err
 	user.Passwd = ""
 	return user, nil
 }
+
+func (us *UserService) FindOrCreate(ctx context.Context, phone string) (domain.User, error) {
+	// 快路径: 只经过一个查询
+	// 从业务角度考虑，这段代码可以删掉，不影响功能
+	// 从现实角度考虑，加上这段代码可以有效的提高性能
+	// 因为大部分用户是已经注册过的，这样他们通过手机号登录时，只需要一个查询就可以
+	user, err := us.repo.FindByPhone(ctx, phone)
+	if err != gorm.ErrRecordNotFound {
+		return user, err
+	}
+
+	// 慢路径：需要走两个查询
+	if err = us.repo.Create(ctx, domain.User{Phone: phone}); err != nil {
+		return domain.User{}, err
+	}
+	// 多库情况下会有主从延迟的问题
+	return us.repo.FindByPhone(ctx, phone)
+}

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"time"
 
@@ -20,10 +21,16 @@ func NewUserRepository(dao *dao.UserDAO, cache *cache.UserCache) *UserRepository
 }
 
 func (ur *UserRepository) Create(ctx context.Context, u domain.User) error {
-	return ur.dao.Insert(ctx, dao.User{
-		Email:  u.Email,
-		Passwd: u.Passwd,
-	})
+	return ur.dao.Insert(ctx, ur.domain2Entity(u))
+}
+
+func (ur *UserRepository) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
+	user, err := ur.dao.SelectByPhone(ctx, phone)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	return ur.entity2Domain(user), nil
 }
 
 func (ur *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
@@ -32,24 +39,11 @@ func (ur *UserRepository) FindByEmail(ctx context.Context, email string) (domain
 		return domain.User{}, err
 	}
 
-	return domain.User{
-		UID:        user.ID,
-		Email:      user.Email,
-		Passwd:     user.Passwd,
-		Nickname:   user.Nickname,
-		Profile:    user.Profile,
-		CreateTime: time.UnixMilli(user.CreateTime),
-		Birthday:   time.UnixMilli(user.Birthday),
-	}, nil
+	return ur.entity2Domain(user), nil
 }
 
 func (ur *UserRepository) UpdateByID(ctx context.Context, u domain.User) error {
-	return ur.dao.UpdateByID(ctx, dao.User{
-		ID:       u.UID,
-		Nickname: u.Nickname,
-		Profile:  u.Profile,
-		Birthday: u.Birthday.UnixMilli(),
-	})
+	return ur.dao.UpdateByID(ctx, ur.domain2Entity(u))
 }
 
 func (ur *UserRepository) FindByID(ctx context.Context, uid int64) (domain.User, error) {
@@ -64,15 +58,7 @@ func (ur *UserRepository) FindByID(ctx context.Context, uid int64) (domain.User,
 	if err != nil {
 		return domain.User{}, err
 	}
-	cu = domain.User{
-		UID:        du.ID,
-		Nickname:   du.Nickname,
-		Email:      du.Email,
-		Passwd:     du.Passwd,
-		Profile:    du.Profile,
-		Birthday:   time.UnixMilli(du.Birthday),
-		CreateTime: time.UnixMilli(du.CreateTime),
-	}
+	cu = ur.entity2Domain(du)
 
 	// 写入到缓存
 	if err = ur.cache.Set(ctx, cu); err != nil {
@@ -80,4 +66,39 @@ func (ur *UserRepository) FindByID(ctx context.Context, uid int64) (domain.User,
 	}
 
 	return cu, nil
+}
+
+func (ur *UserRepository) entity2Domain(u dao.User) domain.User {
+	return domain.User{
+		UID:        u.ID,
+		Nickname:   u.Nickname,
+		Email:      u.Email.String,
+		Phone:      u.Phone.String,
+		Passwd:     u.Passwd,
+		Profile:    u.Profile,
+		Birthday:   time.UnixMilli(u.Birthday.Int64),
+		CreateTime: time.UnixMilli(u.CreateTime),
+	}
+}
+
+func (ur *UserRepository) domain2Entity(u domain.User) dao.User {
+	return dao.User{
+		ID: u.UID,
+		Email: sql.NullString{
+			String: u.Email,
+			Valid:  u.Email != "",
+		},
+		Phone: sql.NullString{
+			String: u.Phone,
+			Valid:  u.Phone != "",
+		},
+		Passwd:   u.Passwd,
+		Nickname: u.Nickname,
+		Profile:  u.Profile,
+		Birthday: sql.NullInt64{
+			Int64: u.Birthday.UnixMilli(),
+			Valid: u.Birthday.UnixMilli() > 0,
+		},
+		CreateTime: u.CreateTime.UnixMilli(),
+	}
 }
