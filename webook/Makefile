@@ -9,3 +9,6 @@ docker:
 run:
 	@go build -o webook.exe
 	@./webook.exe
+
+wire:
+	@wire

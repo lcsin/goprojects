@@ -2,7 +2,7 @@
 
 package config
 
-var Config = config{
+var Cfg = config{
 	DB: MySQLConfig{
 		DNS: "root:root@tcp(localhost:31306)/webook",
 	},
@@ -10,4 +10,6 @@ var Config = config{
 		Addr:   "localhost:31379",
 		Passwd: "",
 	},
+	JWTKey: "fsAck3=%n*&*6XxbCd5ksXGjLHZT2fXc",
+	Port:   "8080",
 }

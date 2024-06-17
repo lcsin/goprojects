@@ -1,4 +1,4 @@
-package web
+package handler
 
 import (
 	"errors"
@@ -9,9 +9,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lcsin/gopocket/util/ginx"
+	"github.com/lcsin/goprojets/webook/config"
 	"github.com/lcsin/goprojets/webook/internal/biz"
 	"github.com/lcsin/goprojets/webook/internal/domain"
 	"github.com/lcsin/goprojets/webook/internal/service"
+)
+
+const (
+	bizKey = "login"
 )
 
 type UserHandler struct {
@@ -19,6 +24,12 @@ type UserHandler struct {
 	codeSrv        *service.CodeService
 	emailRexExp    *regexp.Regexp
 	passwordRexExp *regexp.Regexp
+}
+
+type UserClaims struct {
+	jwt.RegisteredClaims
+	UID       int64  `json:"uid"`
+	UserAgent string `json:"userAgent"`
 }
 
 func NewUserHandler(srv *service.UserService, codeSrv *service.CodeService) *UserHandler {
@@ -58,7 +69,7 @@ func (u *UserHandler) LoginSMS(c *gin.Context) {
 		return
 	}
 
-	verify, err := u.codeSrv.Verify(c, biz.ServiceLogin, req.Phone, req.Code)
+	verify, err := u.codeSrv.Verify(c, bizKey, req.Phone, req.Code)
 	if err != nil {
 		ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, err.Error())
 		return
@@ -91,11 +102,11 @@ func (u *UserHandler) SendLoginSMSCode(c *gin.Context) {
 		return
 	}
 
-	err := u.codeSrv.Send(c, biz.ServiceLogin, req.Phone)
+	err := u.codeSrv.Send(c, bizKey, req.Phone)
 	switch err {
 	case nil:
 		ginx.ResponseOK(c, "code send success")
-	case service.ErrCodeSendTooMnay:
+	case service.ErrCodeSendTooMany:
 		ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, err.Error())
 	default:
 		ginx.ResponseError(c, ginx.ErrInternalServer)
@@ -178,7 +189,7 @@ func (u *UserHandler) Login(c *gin.Context) {
 }
 
 func (u *UserHandler) setJWTToken(c *gin.Context, user domain.User) error {
-	claims := biz.UserClaims{
+	claims := UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
 		},
@@ -186,7 +197,7 @@ func (u *UserHandler) setJWTToken(c *gin.Context, user domain.User) error {
 		UserAgent: c.GetHeader("User-Agent"),
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(biz.JwtKey))
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(config.Cfg.JWTKey))
 	if err != nil {
 		ginx.ResponseError(c, ginx.ErrInternalServer)
 		return err

@@ -1,8 +1,10 @@
 package config
 
 type config struct {
-	DB    MySQLConfig
-	Redis RedisConfig
+	DB     MySQLConfig
+	Redis  RedisConfig
+	JWTKey string
+	Port   string
 }
 
 type MySQLConfig struct {

@@ -9,4 +9,6 @@ var Config = config{
 	Redis: RedisConfig{
 		Addr: "webook-redis:16379",
 	},
+	JWTKey: "fsAck3=%n*&*6XxbCd5ksXGjLHZT2fXc",
+	Port:   "8080",
 }

@@ -6,7 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lcsin/gopocket/util/ginx"
-	"github.com/lcsin/goprojets/webook/internal/biz"
+	"github.com/lcsin/goprojets/webook/config"
+	"github.com/lcsin/goprojets/webook/internal/handler"
 )
 
 type JwtBuilder struct {
@@ -47,9 +48,9 @@ func (j *JwtBuilder) Build() gin.HandlerFunc {
 			return
 		}
 		tokenStr := segment[1]
-		var claims biz.UserClaims
+		var claims handler.UserClaims
 		token, err := jwt.ParseWithClaims(tokenStr, &claims, func(token *jwt.Token) (interface{}, error) {
-			return []byte(biz.JwtKey), nil
+			return []byte(config.Cfg.JWTKey), nil
 		})
 		if err != nil {
 			ginx.ResponseError(c, ginx.ErrUnauthorized)
@@ -89,9 +90,9 @@ func Jwt() gin.HandlerFunc {
 			return
 		}
 		tokenStr := segment[1]
-		var claims biz.UserClaims
+		var claims handler.UserClaims
 		token, err := jwt.ParseWithClaims(tokenStr, &claims, func(token *jwt.Token) (interface{}, error) {
-			return []byte(biz.JwtKey), nil
+			return []byte(config.Cfg.JWTKey), nil
 		})
 		if err != nil {
 			ginx.ResponseError(c, ginx.ErrUnauthorized)

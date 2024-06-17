@@ -12,7 +12,7 @@ import (
 
 var (
 	ErrCodeVerifyTooManyTimes = repository.ErrCodeVerifyTooManyTimes
-	ErrCodeSendTooMnay        = repository.ErrCodeSendTooMany
+	ErrCodeSendTooMany        = repository.ErrCodeSendTooMany
 )
 
 type CodeService struct {
