@@ -16,11 +16,12 @@ import (
 
 type UserHandler struct {
 	srv            *service.UserService
+	codeSrv        *service.CodeService
 	emailRexExp    *regexp.Regexp
 	passwordRexExp *regexp.Regexp
 }
 
-func NewUserHandler(srv *service.UserService) *UserHandler {
+func NewUserHandler(srv *service.UserService, codeSrv *service.CodeService) *UserHandler {
 	const (
 		emailRegexPattern    = "^\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$"
 		passwordRegexPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$`
@@ -32,6 +33,7 @@ func NewUserHandler(srv *service.UserService) *UserHandler {
 		emailRexExp:    regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRexExp: regexp.MustCompile(passwordRegexPattern, regexp.None),
 		srv:            srv,
+		codeSrv:        codeSrv,
 	}
 }
 
@@ -41,16 +43,73 @@ func (u *UserHandler) RegisterRoutes(v1 *gin.RouterGroup) {
 	ug.POST("/login", u.Login)
 	ug.POST("/edit", u.Edit)
 	ug.POST("/profile", u.Profile)
+	ug.POST("/login/sms/code/send", u.SendLoginSMSCode)
+	ug.POST("/login/sms", u.LoginSMS)
+}
+
+func (u *UserHandler) LoginSMS(c *gin.Context) {
+	type LoginSMS struct {
+		Phone string `json:"phone"`
+		Code  string `json:"code"`
+	}
+	var req LoginSMS
+	if err := c.ShouldBind(&req); err != nil {
+		ginx.ResponseError(c, ginx.ErrBadRequest)
+		return
+	}
+
+	verify, err := u.codeSrv.Verify(c, biz.ServiceLogin, req.Phone, req.Code)
+	if err != nil {
+		ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, err.Error())
+		return
+	}
+	if !verify {
+		ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, "验证码错误")
+		return
+	}
+
+	user, err := u.srv.FindOrCreate(c, req.Phone)
+	if err != nil {
+		ginx.ResponseError(c, ginx.ErrInternalServer)
+		return
+	}
+	if err = u.setJWTToken(c, user); err != nil {
+		ginx.ResponseError(c, ginx.ErrInternalServer)
+		return
+	}
+
+	ginx.ResponseOK(c, "login success")
+}
+
+func (u *UserHandler) SendLoginSMSCode(c *gin.Context) {
+	type SendLoginSMSCodeReq struct {
+		Phone string `json:"phone"`
+	}
+	var req SendLoginSMSCodeReq
+	if err := c.ShouldBind(&req); err != nil {
+		ginx.ResponseError(c, ginx.ErrBadRequest)
+		return
+	}
+
+	err := u.codeSrv.Send(c, biz.ServiceLogin, req.Phone)
+	switch err {
+	case nil:
+		ginx.ResponseOK(c, "code send success")
+	case service.ErrCodeSendTooMnay:
+		ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, err.Error())
+	default:
+		ginx.ResponseError(c, ginx.ErrInternalServer)
+	}
 }
 
 // Signup 用户注册
 func (u *UserHandler) Signup(c *gin.Context) {
-	type signupReq struct {
+	type SignupReq struct {
 		Email         string `json:"email"`
 		Passwd        string `json:"passwd"`
 		ConfirmPasswd string `json:"confirmPasswd"`
 	}
-	var req signupReq
+	var req SignupReq
 	if err := c.ShouldBind(&req); err != nil {
 		ginx.ResponseError(c, ginx.ErrBadRequest)
 		return
@@ -88,11 +147,11 @@ func (u *UserHandler) Signup(c *gin.Context) {
 
 // Login 用户登录
 func (u *UserHandler) Login(c *gin.Context) {
-	type loginReq struct {
+	type LoginReq struct {
 		Email  string `json:"'email'"`
 		Passwd string `json:"passwd"`
 	}
-	var req loginReq
+	var req LoginReq
 	if err := c.ShouldBind(&req); err != nil {
 		ginx.ResponseError(c, ginx.ErrBadRequest)
 		return
@@ -112,6 +171,13 @@ func (u *UserHandler) Login(c *gin.Context) {
 	}
 
 	// 生成jwt
+	if err = u.setJWTToken(c, user); err != nil {
+		return
+	}
+	ginx.ResponseOK(c, user)
+}
+
+func (u *UserHandler) setJWTToken(c *gin.Context, user domain.User) error {
 	claims := biz.UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
@@ -123,15 +189,15 @@ func (u *UserHandler) Login(c *gin.Context) {
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(biz.JwtKey))
 	if err != nil {
 		ginx.ResponseError(c, ginx.ErrInternalServer)
-		return
+		return err
 	}
 	// 设置jwt token
 	c.Header("x-jwt-token", fmt.Sprintf("Bearer %v", token))
-	ginx.ResponseOK(c, user)
+	return nil
 }
 
 func (u *UserHandler) Edit(c *gin.Context) {
-	type editReq struct {
+	type EditReq struct {
 		UID      int64  `json:"uid"`
 		Nickname string `json:"nickname"`
 		Email    string `json:"email"`
@@ -139,7 +205,7 @@ func (u *UserHandler) Edit(c *gin.Context) {
 		Profile  string `json:"profile"`
 		Birthday string `json:"birthday"`
 	}
-	var req editReq
+	var req EditReq
 	if err := c.ShouldBind(&req); err != nil {
 		ginx.ResponseError(c, ginx.ErrBadRequest)
 		return

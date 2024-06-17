@@ -13,7 +13,8 @@ func Jwt() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
 		// 不需要登录校验
-		if path == "/api/v1/users/signup" || path == "/api/v1/users/login" || path == "/api/v1/ping" {
+		if path == "/api/v1/users/signup" || path == "/api/v1/users/login" || path == "/api/v1/ping" ||
+			path == "/api/v1/users/login/sms/code/send" || path == "/api/v1/users/login/sms" {
 			return
 		}
 

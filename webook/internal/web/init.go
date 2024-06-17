@@ -8,7 +8,7 @@ import (
 	"github.com/lcsin/goprojets/webook/internal/web/middleware"
 )
 
-func RegisterRoutes(us *service.UserService) *gin.Engine {
+func RegisterRoutes(us *service.UserService, cs *service.CodeService) *gin.Engine {
 	r := gin.Default()
 
 	// 将用户的登录信息存储在cookie
@@ -22,7 +22,7 @@ func RegisterRoutes(us *service.UserService) *gin.Engine {
 	})
 
 	// user routes
-	NewUserHandler(us).RegisterRoutes(v1)
+	NewUserHandler(us, cs).RegisterRoutes(v1)
 
 	return r
 }

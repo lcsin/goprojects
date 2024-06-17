@@ -10,5 +10,6 @@ type MySQLConfig struct {
 }
 
 type RedisConfig struct {
-	Addr string
+	Addr   string
+	Passwd string
 }

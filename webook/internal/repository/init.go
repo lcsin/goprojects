@@ -3,6 +3,7 @@ package repository
 import (
 	"github.com/lcsin/goprojets/webook/internal/config"
 	"github.com/lcsin/goprojets/webook/internal/repository/dao"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -19,4 +20,11 @@ func InitDB() *gorm.DB {
 	}
 
 	return db
+}
+
+func InitRedis() redis.Cmdable {
+	return redis.NewClient(&redis.Options{
+		Addr:     config.Config.Redis.Addr,
+		Password: config.Config.Redis.Passwd,
+	})
 }
