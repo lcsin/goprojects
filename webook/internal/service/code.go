@@ -21,14 +21,7 @@ type CodeService struct {
 }
 
 func NewCodeService(repo *repository.CodeRepository, sms sms.Service) *CodeService {
-<<<<<<< HEAD
-	return &CodeService{
-		repo: repo,
-		sms:  sms,
-	}
-=======
 	return &CodeService{repo: repo, sms: sms}
->>>>>>> ae6108dc1c76bf8cfdb09b580d941e47dd2f2ab6
 }
 
 func (cs *CodeService) Send(ctx context.Context, biz string, phone string) error {

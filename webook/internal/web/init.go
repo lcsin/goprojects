@@ -14,7 +14,16 @@ func RegisterRoutes(us *service.UserService, cs *service.CodeService) *gin.Engin
 	// 将用户的登录信息存储在cookie
 	//store := cookie.NewStore([]byte("secret"))
 	// 设置中间件
-	r.Use(middleware.CORS(), middleware.Jwt())
+	r.Use(
+		middleware.CORS(),
+		middleware.NewJwtBuilder().IgnorePaths(
+			"/api/v1/ping",
+			"/api/v1/users/signup",
+			"/api/v1/users/login",
+			"/api/v1/users/login/sms/code/send",
+			"/api/v1/users/login/sms",
+		).Build(),
+	)
 
 	v1 := r.Group("/api/v1")
 	v1.GET("/ping", func(c *gin.Context) {

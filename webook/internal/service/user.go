@@ -79,9 +79,11 @@ func (us *UserService) FindOrCreate(ctx context.Context, phone string) (domain.U
 	}
 
 	// 慢路径：需要走两个查询
-	if err = us.repo.Create(ctx, domain.User{Phone: phone}); err != nil {
-		return domain.User{}, err
+	err = us.repo.Create(ctx, domain.User{Phone: phone})
+	if err != nil && err != biz.ErrDuplicate {
+		return user, err
 	}
+
 	// 多库情况下会有主从延迟的问题
 	return us.repo.FindByPhone(ctx, phone)
 }

@@ -138,7 +138,7 @@ func (u *UserHandler) Signup(c *gin.Context) {
 	switch err {
 	case nil:
 		ginx.ResponseOK(c, nil)
-	case biz.ErrDuplicateEmail:
+	case biz.ErrDuplicate:
 		ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, err.Error())
 	default:
 		ginx.ResponseError(c, ginx.ErrInternalServer)

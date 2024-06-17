@@ -35,7 +35,7 @@ func (uc *UserCache) key(uid int64) string {
 func (uc *UserCache) Get(ctx context.Context, uid int64) (domain.User, error) {
 	result, err := uc.client.Get(ctx, uc.key(uid)).Result()
 	if err != nil {
-		return domain.User{}, nil
+		return domain.User{}, err
 	}
 
 	var u domain.User

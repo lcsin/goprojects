@@ -42,7 +42,7 @@ func (dao *UserDAO) Insert(ctx context.Context, u User) error {
 		const duplicateErr uint16 = 1062
 		if me.Number == duplicateErr {
 			// 邮箱已被注册
-			return biz.ErrDuplicateEmail
+			return biz.ErrDuplicate
 		}
 	}
 
