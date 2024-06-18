@@ -20,8 +20,8 @@ const (
 )
 
 type UserHandler struct {
-	srv            *service.UserService
-	codeSrv        *service.CodeService
+	srv            service.IUserService
+	codeSrv        service.ICodeService
 	emailRexExp    *regexp.Regexp
 	passwordRexExp *regexp.Regexp
 }
@@ -32,7 +32,7 @@ type UserClaims struct {
 	UserAgent string `json:"userAgent"`
 }
 
-func NewUserHandler(srv *service.UserService, codeSrv *service.CodeService) *UserHandler {
+func NewUserHandler(srv service.IUserService, codeSrv service.ICodeService) *UserHandler {
 	const (
 		emailRegexPattern    = "^\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$"
 		passwordRegexPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$`
@@ -249,13 +249,18 @@ func (u *UserHandler) Edit(c *gin.Context) {
 }
 
 func (u *UserHandler) Profile(c *gin.Context) {
-	uid, ok := c.Get("uid")
-	if !ok {
-		ginx.ResponseError(c, ginx.ErrNotFound)
-		return
+	type Profile struct {
+		UID          int64  `json:"uid"`
+		Email        string `json:"email"`
+		Phone        string `json:"phone"`
+		Nickname     string `json:"nickname"`
+		AboutMe      string `json:"aboutMe"`
+		Birthday     int64  `json:"birthday"`
+		RegisterTime int64  `json:"registerTime"`
 	}
 
-	user, err := u.srv.Profile(c, uid.(int64))
+	uid := c.MustGet("uid").(int64)
+	user, err := u.srv.Profile(c, uid)
 	if err != nil {
 		if errors.Is(err, biz.ErrUserNotFound) {
 			ginx.ResponseErrorMessage(c, ginx.ErrNotFound, err.Error())
@@ -265,5 +270,15 @@ func (u *UserHandler) Profile(c *gin.Context) {
 		return
 	}
 
-	ginx.ResponseOK(c, user)
+	profile := &Profile{
+		UID:          user.UID,
+		Email:        user.Email,
+		Phone:        user.Phone,
+		Nickname:     user.Nickname,
+		AboutMe:      user.Profile,
+		Birthday:     user.Birthday.UnixMilli(),
+		RegisterTime: user.CreateTime.UnixMilli(),
+	}
+
+	ginx.ResponseOK(c, profile)
 }

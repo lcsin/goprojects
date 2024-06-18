@@ -11,12 +11,20 @@ import (
 	"github.com/lcsin/goprojets/webook/internal/repository/dao"
 )
 
-type UserRepository struct {
-	dao   *dao.UserDAO     // 持久层
-	cache *cache.UserCache // 缓存层
+type IUserRepository interface {
+	Create(ctx context.Context, u domain.User) error
+	FindByPhone(ctx context.Context, phone string) (domain.User, error)
+	FindByEmail(ctx context.Context, email string) (domain.User, error)
+	UpdateByID(ctx context.Context, u domain.User) error
+	FindByID(ctx context.Context, uid int64) (domain.User, error)
 }
 
-func NewUserRepository(dao *dao.UserDAO, cache *cache.UserCache) *UserRepository {
+type UserRepository struct {
+	dao   dao.IUserDAO     // 持久层
+	cache cache.IUserCache // 缓存层
+}
+
+func NewUserRepository(dao dao.IUserDAO, cache cache.IUserCache) IUserRepository {
 	return &UserRepository{dao: dao, cache: cache}
 }
 

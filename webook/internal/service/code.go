@@ -15,12 +15,17 @@ var (
 	ErrCodeSendTooMany        = repository.ErrCodeSendTooMany
 )
 
+type ICodeService interface {
+	Send(ctx context.Context, biz string, phone string) error
+	Verify(ctx context.Context, biz string, phone, inputCode string) (bool, error)
+}
+
 type CodeService struct {
-	repo *repository.CodeRepository
+	repo repository.ICodeRepository
 	sms  sms.Service
 }
 
-func NewCodeService(repo *repository.CodeRepository, sms sms.Service) *CodeService {
+func NewCodeService(repo repository.ICodeRepository, sms sms.Service) ICodeService {
 	return &CodeService{repo: repo, sms: sms}
 }
 

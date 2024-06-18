@@ -10,11 +10,19 @@ import (
 	"gorm.io/gorm"
 )
 
+type IUserDAO interface {
+	Insert(ctx context.Context, u User) error
+	SelectByPhone(ctx context.Context, phone string) (User, error)
+	SelectByEmail(ctx context.Context, email string) (User, error)
+	SelectByID(ctx context.Context, ID int64) (User, error)
+	UpdateByID(ctx context.Context, u User) error
+}
+
 type UserDAO struct {
 	db *gorm.DB
 }
 
-func NewUserDAO(db *gorm.DB) *UserDAO {
+func NewUserDAO(db *gorm.DB) IUserDAO {
 	return &UserDAO{db: db}
 }
 

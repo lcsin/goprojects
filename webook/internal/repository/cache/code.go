@@ -12,11 +12,16 @@ import (
 var ErrCodeSendToMany = errors.New("验证码发送频繁")
 var ErrCodeVerifyTooManyTimes = errors.New("验证码验证频繁")
 
+type ICodeCache interface {
+	Set(ctx context.Context, biz, phone, code string) error
+	Verify(ctx context.Context, biz, phone, inputCode string) (bool, error)
+}
+
 type CodeCache struct {
 	client redis.Cmdable
 }
 
-func NewCodeCache(client redis.Cmdable) *CodeCache {
+func NewCodeCache(client redis.Cmdable) ICodeCache {
 	return &CodeCache{client: client}
 }
 

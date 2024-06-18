@@ -10,6 +10,11 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type IUserCache interface {
+	Get(ctx context.Context, uid int64) (domain.User, error)
+	Set(ctx context.Context, u domain.User) error
+}
+
 type UserCache struct {
 	// 能用接口尽量用接口而不是直接用具体的实现，这样我们可以很灵活的使用这个接口
 	// 例如我们可以自定义实现为Redis+本地缓存，当Redis崩了后启用本地缓存
@@ -24,7 +29,7 @@ type UserCache struct {
 // 1. A 用到 B，B 一定是接口
 // 2. A 用到 B，B 一定是A的字段
 // 3. A 用到 B，A 一定不初始化B，而是外面注入
-func NewUserCache(client redis.Cmdable) *UserCache {
+func NewUserCache(client redis.Cmdable) IUserCache {
 	return &UserCache{client: client, expiration: time.Minute * 15}
 }
 

@@ -11,11 +11,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserService struct {
-	repo *repository.UserRepository
+type IUserService interface {
+	Signup(ctx context.Context, u domain.User) error
+	Login(ctx context.Context, u domain.User) (domain.User, error)
+	Edit(ctx context.Context, u domain.User) error
+	Profile(ctx context.Context, uid int64) (domain.User, error)
+	FindOrCreate(ctx context.Context, phone string) (domain.User, error)
 }
 
-func NewUserService(repo *repository.UserRepository) *UserService {
+type UserService struct {
+	repo repository.IUserRepository
+}
+
+func NewUserService(repo repository.IUserRepository) IUserService {
 	return &UserService{repo: repo}
 }
 
@@ -64,7 +72,6 @@ func (us *UserService) Profile(ctx context.Context, uid int64) (domain.User, err
 		}
 		return domain.User{}, err
 	}
-	user.Passwd = ""
 	return user, nil
 }
 
