@@ -102,6 +102,10 @@ func (u *UserHandler) SendLoginSMSCode(c *gin.Context) {
 		return
 	}
 
+	if req.Phone == "" {
+		ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, "手机号码为空")
+	}
+
 	err := u.codeSrv.Send(c, bizKey, req.Phone)
 	switch err {
 	case nil:
