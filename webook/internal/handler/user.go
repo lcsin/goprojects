@@ -168,10 +168,7 @@ func (u *UserHandler) Login(c *gin.Context) {
 		return
 	}
 	// 用户登录
-	user, err := u.srv.Login(c, domain.User{
-		Email:  req.Email,
-		Passwd: req.Passwd,
-	})
+	user, err := u.srv.Login(c, req.Email, req.Passwd)
 	if err != nil {
 		if errors.Is(err, biz.ErrInvalidUserOrPasswd) {
 			ginx.ResponseErrorMessage(c, ginx.ErrBadRequest, err.Error())

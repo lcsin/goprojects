@@ -13,7 +13,7 @@ import (
 
 type IUserService interface {
 	Signup(ctx context.Context, u domain.User) error
-	Login(ctx context.Context, u domain.User) (domain.User, error)
+	Login(ctx context.Context, email, passwd string) (domain.User, error)
 	Edit(ctx context.Context, u domain.User) error
 	Profile(ctx context.Context, uid int64) (domain.User, error)
 	FindOrCreate(ctx context.Context, phone string) (domain.User, error)
@@ -37,8 +37,8 @@ func (us *UserService) Signup(ctx context.Context, u domain.User) error {
 	return us.repo.Create(ctx, u)
 }
 
-func (us *UserService) Login(ctx context.Context, u domain.User) (domain.User, error) {
-	user, err := us.repo.FindByEmail(ctx, u.Email)
+func (us *UserService) Login(ctx context.Context, email, passwd string) (domain.User, error) {
+	user, err := us.repo.FindByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return domain.User{}, biz.ErrInvalidUserOrPasswd
@@ -46,11 +46,10 @@ func (us *UserService) Login(ctx context.Context, u domain.User) (domain.User, e
 		return domain.User{}, err
 	}
 
-	if err = bcrypt.CompareHashAndPassword([]byte(user.Passwd), []byte(u.Passwd)); err != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Passwd), []byte(passwd)); err != nil {
 		return domain.User{}, biz.ErrInvalidUserOrPasswd
 	}
 
-	user.Passwd = ""
 	return user, nil
 }
 
