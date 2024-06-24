@@ -1,42 +1,38 @@
-package ratelimit
+package middleware
 
 import (
 	_ "embed"
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
+	"github.com/lcsin/goprojets/webook/pkg/ratelimiter"
 )
 
-type Builder struct {
-	prefix   string
-	cmd      redis.Cmdable
-	interval time.Duration
-	// 阈值
-	rate int
+type LimiterBuilder struct {
+	prefix  string
+	limiter ratelimiter.Limiter
 }
 
-//go:embed slide_window.lua
-var luaScript string
-
-func NewBuilder(cmd redis.Cmdable, interval time.Duration, rate int) *Builder {
-	return &Builder{
-		cmd:      cmd,
-		prefix:   "ip-limiter",
-		interval: interval,
-		rate:     rate,
+func NewLimiterBuilder(limiter ratelimiter.Limiter) *LimiterBuilder {
+	return &LimiterBuilder{
+		prefix:  "ip-limiter",
+		limiter: limiter,
 	}
 }
 
-func (b *Builder) Prefix(prefix string) *Builder {
+func (b *LimiterBuilder) Prefix(prefix string) *LimiterBuilder {
 	b.prefix = prefix
 	return b
 }
 
-func (b *Builder) Build() gin.HandlerFunc {
+func (b *LimiterBuilder) limit(c *gin.Context) (bool, error) {
+	key := fmt.Sprintf("%s:%s", b.prefix, c.ClientIP())
+	return b.limiter.Limit(c, key)
+}
+
+func (b *LimiterBuilder) Build() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		limited, err := b.limit(ctx)
 		if err != nil {
@@ -56,10 +52,4 @@ func (b *Builder) Build() gin.HandlerFunc {
 		}
 		ctx.Next()
 	}
-}
-
-func (b *Builder) limit(ctx *gin.Context) (bool, error) {
-	key := fmt.Sprintf("%s:%s", b.prefix, ctx.ClientIP())
-	return b.cmd.Eval(ctx, luaScript, []string{key},
-		b.interval.Milliseconds(), b.rate, time.Now().UnixMilli()).Bool()
 }

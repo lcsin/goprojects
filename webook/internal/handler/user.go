@@ -2,14 +2,12 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lcsin/gopocket/util/ginx"
-	"github.com/lcsin/goprojets/webook/config"
 	"github.com/lcsin/goprojets/webook/internal/biz"
 	"github.com/lcsin/goprojets/webook/internal/domain"
 	"github.com/lcsin/goprojets/webook/internal/service"
@@ -24,12 +22,7 @@ type UserHandler struct {
 	codeSrv        service.ICodeService
 	emailRexExp    *regexp.Regexp
 	passwordRexExp *regexp.Regexp
-}
-
-type UserClaims struct {
-	jwt.RegisteredClaims
-	UID       int64  `json:"uid"`
-	UserAgent string `json:"userAgent"`
+	jwtHandler
 }
 
 func NewUserHandler(srv service.IUserService, codeSrv service.ICodeService) *UserHandler {
@@ -45,6 +38,7 @@ func NewUserHandler(srv service.IUserService, codeSrv service.ICodeService) *Use
 		passwordRexExp: regexp.MustCompile(passwordRegexPattern, regexp.None),
 		srv:            srv,
 		codeSrv:        codeSrv,
+		jwtHandler:     newJwtHandler(),
 	}
 }
 
@@ -56,6 +50,27 @@ func (u *UserHandler) RegisterRoutes(v1 *gin.RouterGroup) {
 	ug.POST("/profile", u.Profile)
 	ug.POST("/login/sms/code/send", u.SendLoginSMSCode)
 	ug.POST("/login/sms", u.LoginSMS)
+	ug.POST("/refresh/token", u.RefreshToken)
+}
+
+func (u *UserHandler) RefreshToken(c *gin.Context) {
+	tokenStr := ExtractToken(c)
+
+	var rc RefreshClaims
+	token, err := jwt.ParseWithClaims(tokenStr, &rc, func(token *jwt.Token) (interface{}, error) {
+		return u.refreshKey, nil
+	})
+	if err != nil || !token.Valid {
+		ginx.ResponseError(c, ginx.ErrUnauthorized)
+		return
+	}
+
+	if err = u.setJWTToken(c, rc.UID); err != nil {
+		ginx.ResponseError(c, ginx.ErrUnauthorized)
+		return
+	}
+
+	ginx.ResponseOK(c, "refresh token success !!!")
 }
 
 func (u *UserHandler) LoginSMS(c *gin.Context) {
@@ -84,11 +99,15 @@ func (u *UserHandler) LoginSMS(c *gin.Context) {
 		ginx.ResponseError(c, ginx.ErrInternalServer)
 		return
 	}
-	if err = u.setJWTToken(c, user); err != nil {
-		ginx.ResponseError(c, ginx.ErrInternalServer)
+
+	// jwt token
+	if err = u.setJWTToken(c, user.UID); err != nil {
 		return
 	}
-
+	// refresh token
+	if err = u.refreshToken(c, user.UID); err != nil {
+		return
+	}
 	ginx.ResponseOK(c, "login success")
 }
 
@@ -182,31 +201,35 @@ func (u *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// 生成jwt
-	if err = u.setJWTToken(c, user); err != nil {
+	// jwt token
+	if err = u.setJWTToken(c, user.UID); err != nil {
+		return
+	}
+	// refresh token
+	if err = u.refreshToken(c, user.UID); err != nil {
 		return
 	}
 	ginx.ResponseOK(c, user)
 }
 
-func (u *UserHandler) setJWTToken(c *gin.Context, user domain.User) error {
-	claims := UserClaims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
-		},
-		UID:       user.UID,
-		UserAgent: c.GetHeader("User-Agent"),
-	}
-
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(config.Cfg.JWTKey))
-	if err != nil {
-		ginx.ResponseError(c, ginx.ErrInternalServer)
-		return err
-	}
-	// 设置jwt token
-	c.Header("x-jwt-token", fmt.Sprintf("Bearer %v", token))
-	return nil
-}
+//func (u *UserHandler) setJWTToken(c *gin.Context, user domain.User) error {
+//	claims := UserClaims{
+//		RegisteredClaims: jwt.RegisteredClaims{
+//			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
+//		},
+//		UID:       user.UID,
+//		UserAgent: c.GetHeader("User-Agent"),
+//	}
+//
+//	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(config.Cfg.JWTKey))
+//	if err != nil {
+//		ginx.ResponseError(c, ginx.ErrInternalServer)
+//		return err
+//	}
+//	// 设置jwt token
+//	c.Header("x-jwt-token", fmt.Sprintf("Bearer %v", token))
+//	return nil
+//}
 
 func (u *UserHandler) Edit(c *gin.Context) {
 	type EditReq struct {

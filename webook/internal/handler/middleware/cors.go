@@ -14,7 +14,8 @@ func CORS() gin.HandlerFunc {
 		// 是否允许带上用户认证比如cookie
 		AllowCredentials: true,
 		// 业务请求中可以带上的请求头
-		AllowHeaders: []string{"Content-Type", "Authorization"},
+		AllowHeaders:  []string{"Content-Type", "Authorization"},
+		ExposeHeaders: []string{"x-jwt-token", "x-refresh-token"},
 		// 哪些来源是允许的
 		AllowOriginFunc: func(origin string) bool {
 			// 开发环境

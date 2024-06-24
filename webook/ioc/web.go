@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lcsin/goprojets/webook/internal/handler"
 	"github.com/lcsin/goprojets/webook/internal/handler/middleware"
-	"github.com/lcsin/goprojets/webook/pkg/ratelimit"
+	"github.com/lcsin/goprojets/webook/pkg/ratelimiter"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -27,6 +27,6 @@ func InitMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 		// JWT中间件
 		middleware.Jwt(),
 		// 限流中间件
-		ratelimit.NewBuilder(redisClient, time.Minute, 100).Build(),
+		middleware.NewLimiterBuilder(ratelimiter.NewRedisSlideWindowLimiter(redisClient, time.Second, 100)).Build(),
 	}
 }
