@@ -10,6 +10,5 @@ var Cfg = config{
 		Addr:   "localhost:31379",
 		Passwd: "",
 	},
-	JWTKey: "fsAck3=%n*&*6XxbCd5ksXGjLHZT2fXc",
-	Port:   "8080",
+	Port: "8080",
 }

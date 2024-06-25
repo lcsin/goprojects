@@ -22,7 +22,8 @@ func InitWebServer() *gin.Engine {
 		// repository
 		repository.NewUserRepository, repository.NewCodeRepository,
 		// service
-		ioc.InitSMSService, service.NewUserService, service.NewCodeService,
+		ioc.InitSMSService,
+		service.NewUserService, service.NewCodeService,
 		// handler
 		handler.NewUserHandler,
 		// web server

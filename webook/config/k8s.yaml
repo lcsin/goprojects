@@ -1,0 +1,8 @@
+service:
+  name: "webook"
+  port: "8080"
+mysql:
+  dns: "root:root@tcp(k8s-mysql:13306)/webook"
+redis:
+  addr: "webook-redis:16379"
+  passwd: ""

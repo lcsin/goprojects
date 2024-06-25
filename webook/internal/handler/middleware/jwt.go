@@ -95,7 +95,7 @@ func Jwt() gin.HandlerFunc {
 		tokenStr := handler.ExtractToken(c)
 		var claims handler.UserClaims
 		token, err := jwt.ParseWithClaims(tokenStr, &claims, func(token *jwt.Token) (interface{}, error) {
-			return []byte(config.Cfg.JWTKey), nil
+			return []byte("fsAck3=%n*&*6XxbCd5ksXGjLHZT2fXc"), nil
 		})
 		if err != nil {
 			ginx.ResponseError(c, ginx.ErrUnauthorized)
